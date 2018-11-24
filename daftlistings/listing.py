@@ -86,10 +86,9 @@ class Listing(object):
         :return:
         """
         try:
-            if self._data_from_search:
-                return self._data_from_search.find('strong', {'class': 'price'}).text
-            else:
-                return self._ad_page_content.find('div', {'id': 'smi-price-string'}).text
+
+            return self._data_from_search.find('strong', {'class': 'PropertyInformationCommonStyles__costAmountCopy'}).text
+
         except Exception as e:
             if self._debug:
                 self._logger.error(
