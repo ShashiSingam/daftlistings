@@ -31,13 +31,8 @@ class Listing(object):
         if self._ad_page_content_data is not None:
             return self._ad_page_content_data
 
-        if self._url:
-            self._ad_page_content_data = Request(
-                debug=self._debug).get(self._url)
-        else:
-            self._ad_page_content_data = Request(
-                debug=self._debug).get(self.daft_link)
-
+        self._ad_page_content_data = Request(
+            debug=self._debug).get(self.daft_link)
         return self._ad_page_content_data
 
     @property
@@ -54,13 +49,10 @@ class Listing(object):
     def description(self):
         try:
             description_div = str(
-                self._ad_page_content.find('div', {'id': 'description'})
+                self._ad_page_content.find('p', {'class': 'PropertyDescription__propertyDescription'})
             )
 
-            pos_token = description_div.find('<!-- dont_cut_below_here -->')
-            if pos_token == -1:
-                return None
-            return html2text.html2text(description_div[0:pos_token])
+            return html2text.html2text(description_div)
         except Exception as e:
             if self._debug:
                 self._logger.error(
@@ -151,7 +143,7 @@ class Listing(object):
         """
         facilities = []
         try:
-            list_items = self._ad_page_content.select("#facilities li")
+            list_items = self._ad_page_content.select(".PropertyFacilities__facilitiesList li")
         except Exception as e:
             if self._debug:
                 self._logger.error(
@@ -159,7 +151,7 @@ class Listing(object):
             return
 
         for li in list_items:
-            facilities.append(li.text)
+            facilities.append(li.text.strip())
         return facilities
 
     @property
@@ -206,19 +198,10 @@ class Listing(object):
         This method returns the formalised address.
         :return:
         """
-        try:
-            if self._data_from_search:
-                t = self._data_from_search.find('a').contents[0]
-            else:
-                t = self._ad_page_content.find(
-                    'div', {'class': 'smi-object-header'}).find(
-                    'h1').text.strip()
 
-        except Exception as e:
-            if self._debug:
-                self._logger.error(
-                    "Error getting formalised_address. Error message: " + e.message)
-            return
+        t = self._ad_page_content.find(
+            'h1', {'class': 'PropertyMainInformation__address'}).text.strip()
+
         s = t.split('-')
         a = s[0].strip()
         if 'SALE AGREED' in a:
@@ -391,10 +374,8 @@ class Listing(object):
         """
         try:
             div = self._ad_page_content.find(
-                'div', {'class': 'description_extras'})
-            index = [i for i, s in enumerate(
-                div.contents) if 'Shortcode' in str(s)][0] + 1
-            return div.contents[index]['href']
+                'a', {'class': 'PropertyShortcode__link'}, href=True)
+            return div['href']
         except Exception as e:
             if self._debug:
                 self._logger.error(
